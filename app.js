@@ -1,21 +1,42 @@
 const fs = require('fs')
+const path = require('path')
 const express = require('express')
 const morgan = require('morgan')
-const AppError = require('./utils/appError')
-const globalErrorHandler = require('./controllers/errorController')
 const rateLimit = require('express-rate-limit')
 const helmet = require('helmet')
 const mongoSanitize = require('express-mongo-sanitize')
 const xss = require('xss-clean')
 const hpp = require('hpp')
 
-/*======importing routes========================*/
+const AppError = require('./utils/appError')
+const globalErrorHandler = require('./controllers/errorController')
+
+/*================ importing routes ====================*/
 const tourRouter = require('./routes/tourRoutes')
 const userRouter = require('./routes/userRoutes')
 const reviewRouter = require('./routes/reviewRoutes')
+const viewRouter = require('./routes/viewRoutes')
 
 /* we will now call express to add a bunch of methods to app variable*/
 const app = express()
+
+/*======================== Starting up with Server side rendering (SSR)=================================
+-) The app.set() function is used to assigns the setting name to value.
+-) We may store any value that you want, but certain names can be used to configure the behavior of the server.
+-) Here we are setting the view engine (used for SSR) to pug (a template engine, it comes with express
+   out of box still we need to install npm i pug but no neeed to import)
+-) Now we have to define in which folder path our views are present.
+-) We can define the folder path directly like .__dirname/views but sometimes it give some issues like missing of / etc.
+-) So the secure way is to use a build in path library which securly joins two part of path url with /. 
+*/
+app.set('view engine', 'pug')
+app.set('views', path.join(__dirname, 'views'))
+
+/* ====
+-) express middleware for serving static files to browser.
+-) this provides a way to access files in a particular folder ==== */
+//app.use(express.static(`${__dirname}/public`))
+app.use(express.static(path.join(__dirname, 'public')))
 
 /*=================================================Middlewares ================================================
 -) For more -> https://expressjs.com/en/guide/using-middleware.html
@@ -141,12 +162,6 @@ app.use(
    })
 )
 
-/* ====
--) express middleware for serving static files to browser.
--) this provides a way to access files in a particular folder==== */
-app.use(express.static(`${__dirname}/public`))
-
-
 /*
 -) Here we are creating a new custom middleware
 -) It receives three params request, response and next.
@@ -174,7 +189,7 @@ app.use((req, res, next) => {
    This is called mounting the router.
 -) By doing this the .route() for the route '/api/v1/tours' will be '/' only because it will be already routed through the middleware.
 */
-
+app.use('/', viewRouter)
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/reviews', reviewRouter)
