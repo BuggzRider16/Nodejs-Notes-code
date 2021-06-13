@@ -191,6 +191,7 @@ const tourSchema = new mongoose.Schema({
 //tourSchema.index({ price: 1 }) //regular index
 tourSchema.index({ price: 1, ratingsAverage: -1 }) //compound index
 tourSchema.index({ slug: 1 })
+tourSchema.index({ startLocation: '2dsphere' })
 
 /*================ virtual properties==================
 -) These are the fields in our schema which are not persistence.
@@ -307,20 +308,18 @@ tourSchema.post(/^find/, function (doc, next) {
 })
 
 
+/*================================= Aggregation middleware ==========================================
+-) In Aggregation middleware we will be doing the same thing we did in query middleware.
+-) In Aggregation middleware this points to aggregation object.
+-) Here we are just adding a match in the starting of the pipeline array(stages) to ignore the documents having secretTour:true
+*/
 
-    /
-    /*================================= Aggregation middleware ==========================================
-    -) In Aggregation middleware we will be doing the same thing we did in query middleware.
-    -) In Aggregation middleware this points to aggregation object.
-    -) Here we are just adding a match in the starting of the pipeline array(stages) to ignore the documents having secretTour:true
-    */
+tourSchema.pre('aggregation', function (next) {
+    //console.log(this.pipeline()) //this will print all the stages
 
-    tourSchema.pre('aggregation', function (next) {
-        //console.log(this.pipeline()) //this will print all the stages
-
-        this.pipeline().unshift({ $match: { $secretTour: { $ne: true } } })
-        next()
-    })
+    this.pipeline().unshift({ $match: { $secretTour: { $ne: true } } })
+    next()
+})
 
 /*
 -) Now we will create a model using the created schema.
