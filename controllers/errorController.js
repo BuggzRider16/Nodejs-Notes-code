@@ -8,34 +8,63 @@
 
 const AppError = require("../utils/appError")
 
-const sendErrorDev = (err, res) => {
-    res.status(err.statusCode).json({
+const sendErrorDev = (err, req, res) => {
+    // A) API
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(err.statusCode).json({
         status: err.status,
-        message: err.message,
-        stack: err.stack,
         error: err,
+        message: err.message,
+        stack: err.stack
+      })
+    }
+  
+    // B) RENDERED WEBSITE`
+    console.error('ERROR 💥', err)
+    return res.status(err.statusCode).render('error', {
+      title: 'Something went wrong!',
+      msg: err.message
     })
-}
+  }
 
-const sendErrorProd = (err, res) => {
-    // Operational, trused error: send message to client
-    if (error.isOperational) {
-        res.status(err.statusCode).json({
-            status: err.status,
-            message: err.message,
+  const sendErrorProd = (err, req, res) => {
+    // A) API
+    if (req.originalUrl.startsWith('/api')) {
+      // A) Operational, trusted error: send message to client
+      if (err.isOperational) {
+        return res.status(err.statusCode).json({
+          status: err.status,
+          message: err.message
         })
+      }
+      // B) Programming or other unknown error: don't leak error details
+      // 1) Log error
+      console.error('ERROR 💥', err)
+      // 2) Send generic message
+      return res.status(500).json({
+        status: 'error',
+        message: 'Something went very wrong!'
+      })
     }
-    //Programming or other unknown error: don't leak error details
-    else {
-        // 1)Log error
-        console.error('Error', err)
-        // 2) Send generic message
-        res.status(500).json({
-            status: 'Error',
-            message: 'Something went very wrong'
-        })
+  
+    // B) RENDERED WEBSITE
+    // A) Operational, trusted error: send message to client
+    if (err.isOperational) {
+      console.log(err)
+      return res.status(err.statusCode).render('error', {
+        title: 'Something went wrong!',
+        msg: err.message
+      })
     }
-}
+    // B) Programming or other unknown error: don't leak error details
+    // 1) Log error
+    console.error('ERROR 💥', err)
+    // 2) Send generic message
+    return res.status(err.statusCode).render('error', {
+      title: 'Something went wrong!',
+      msg: 'Please try again later.'
+    })
+  }
 
 const handleJwtError = err => new AppError('Invalid token. Please log in again', 401)
 
@@ -67,6 +96,7 @@ module.exports = (err, req, res, next) => {
         sendErrorDev(err, res)
     } else if (process.env.NODE_ENV === 'production') {
         let error = { ...err }
+        error.message = err.message
         /*
         -) Transforming weird operational errors to user understandable error
         */

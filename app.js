@@ -7,6 +7,7 @@ const helmet = require('helmet')
 const mongoSanitize = require('express-mongo-sanitize')
 const xss = require('xss-clean')
 const hpp = require('hpp')
+const cookieParser= require('cookie-parser')
 
 const AppError = require('./utils/appError')
 const globalErrorHandler = require('./controllers/errorController')
@@ -127,6 +128,9 @@ app.use('/api', limiter)
 -) Here we can add a request body size and if the size increases it will give error. 
 */
 app.use(express.json({ limit: '10kb' }))
+
+// Cookie parser
+app.use(cookieParser())
 
 /* ============== Data sanitisation against NoSQL query injection =================
 -) Some time hackers provide queries instead of data in the fields which cause DB to return data which the client is not authorised.
