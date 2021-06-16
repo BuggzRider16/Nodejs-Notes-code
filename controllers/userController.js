@@ -1,7 +1,81 @@
+const multer = require('multer')
+const sharp = require('sharp')
 const User = require('./../models/userModel')
 const catchAsync = require('./../utils/catchAsync')
 const AppError = require('./../utils/appError')
 const factory = require('./handlerFactory')
+
+/*=============================== File upload by multer ============================================ */
+
+/*
+-) Multer (npm i multer) is a package used to upload files like images.
+-) Files such as images are never saved in DB , the are saved in the file system and in DB we pass the URL of that image.
+
+-) In multerStorage() we will use the multer disk storage (other option is to store in memory as buffer) and inside that will provide
+   destination and file name.
+-) Destination and filename both are functions receiving request, file response and a callback function (same as next of express)
+-) For destination the callback funtion first param is the error and second is destination 
+-) For filename the callback funtion first param is the error and second is filename.
+-) As we have to resize the image using sharp we will store the image file to memory and after resize will store it to disk Storage.
+*/
+
+// const multerStorage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'public/img/users')
+//     },
+//     filename: (req, file, cb) => {
+//         //user-userID-currentTimestamp.fileExtention
+//         const ext = file.mimetype.split('/')[1]
+//         cb(null, `user-${req.user.id}-${Date.now()}.${ext}`)
+//     }
+// })
+
+const multerStorage = multer.memoryStorage()
+
+/*
+-) In multerFilter() we are filtering if the incomming file is a image or not
+*/
+const multerFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image')) {
+        cb(null, true)
+    } else {
+        cb(new AppError('Not an image! Please upload only images'), false)
+    }
+}
+
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: multerFilter
+})
+
+/*
+-)Adding a middleware to upload images where 'photo' is the name of the field which will contain the image
+*/
+exports.uploadUserPhoto = upload.single('photo')
+
+/*============================================== multer ends ==================================================*/
+
+/*========================================= Using sharp for image processing ================================== */
+/*
+-) Here we are using sharp package to resize large images .
+-) From multer library we are storing the image in the memory buffer instead of storing it to disk.
+-) Then we are setting the file name to req.file.filename so that it is accessible for future middlewares like the updateMe one.
+*/
+
+exports.resizeUserPhotos = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+        return next()
+    }
+    req.file.filename = `user-${req.user.id}-${Date.now()}`
+    await sharp(req.file.buffer) // getting file from memory
+        .resize(500, 500)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 })
+        .toFile(`public/img/users/${req.file.filename}`) //storing it to disk
+    next()
+})
+
+/*================================================== sharp completes ======================================= */
 
 const filterObj = (obj, ...allowedFields) => {
     const newObj = {}
@@ -49,6 +123,10 @@ exports.updateMe = catchAsync(async (req, res, next) => {
          -) So we will filter unwanted fields.  
     */
     const filteredBody = filterObj(req.body, 'name', 'email')
+
+    if (req.file) { // adding image as well in the update
+        filteredBody.photo = req.file.filename
+    }
 
     /*
     Step 3) Update user document

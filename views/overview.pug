@@ -5,7 +5,7 @@ block content
   main.main
     .card-container
     
-      each tour in tours //-looping over the tour data
+      each tour in tours
         .card
           .card__header
             .card__picture
@@ -36,7 +36,7 @@ block content
 
           .card__footer
             p
-              span.card__footer-value= `$${tour.price}`//- To add space we use | symbol
+              span.card__footer-value= `$${tour.price}`
               | 
               span.card__footer-text per person
             p.card__ratings

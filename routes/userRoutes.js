@@ -31,7 +31,10 @@ router.patch('/updateMyPassword', authController.updatePassword)
 router.get('/me',
     userController.getMe,
     userController.getUser) // behind the scenes it uses get user only
-router.patch('/updateMe', userController.updateMe)
+router.patch('/updateMe',
+    userController.uploadUserPhoto,
+    userController.resizeUserPhotos,
+    userController.updateMe)
 router.delete('/deleteMe', userController.deleteMe)
 
 router.use(authController.restrictTo('admin')) // restricting access of the below routes only to admin

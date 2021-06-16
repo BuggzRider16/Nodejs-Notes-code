@@ -17,6 +17,7 @@ const tourRouter = require('./routes/tourRoutes')
 const userRouter = require('./routes/userRoutes')
 const reviewRouter = require('./routes/reviewRoutes')
 const viewRouter = require('./routes/viewRoutes')
+const bookingRouter = require('./routes/bookingRoutes')
 
 /* we will now call express to add a bunch of methods to app variable*/
 const app = express()
@@ -197,6 +198,7 @@ app.use('/', viewRouter)
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/reviews', reviewRouter)
+app.use('/api/v1/bookings', bookingRouter)
 /*=============================================================================================================*/
 
 /* =================================== Error Handling middleware =============================================*/
