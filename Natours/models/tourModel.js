@@ -19,7 +19,7 @@ const User = require('./userModel')
         ......
     } 
         Eg name,
-    3) For validate we can r=write in two ways Eg, one for name and another for priceDiscount
+    3) For validate we can rewrite in two ways Eg, one for name and another for priceDiscount
 
 ============================= Data Validation ================================
 -) Data validation is the step in which we check that the data is going to DB is correct or not.
